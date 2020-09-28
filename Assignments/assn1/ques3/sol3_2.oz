@@ -1,6 +1,6 @@
 % Epsilon must be float
 declare
-fun lazy {Approximate S Epsilon}
+fun {Approximate S Epsilon}
     case S of
     nil then 0.0
     [] H1|T1 then
