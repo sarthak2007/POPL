@@ -1,0 +1,144 @@
+Q1:
+data Maybe a = Nothing | Just a
+
+return x = Just x
+>>= m g  = case m of
+        Nothing -> Nothing
+        Just x  -> g x
+
+Proof:
+1. First monadic law: return a >>= f = f a
+Let's check whether this law holds=>
+
+=> return a >>= f
+= Just a >>= f
+= f a
+Hence, first law is valid.
+
+2. Second monadic law: m >>= return = m
+Let's check whether this law holds=>
+
+(i) Let's first check when m = Nothing=>
+=> Nothing >>= return
+= Nothing
+Second law is valid when m = Nothing
+
+(ii) Let's now check when m = Just a=>
+=> Just a >>= return
+= return a
+= Just a
+Second law is valid when m = Just a
+
+Hence, second law is valid.
+
+3. Third monadic law: m >>= f >>= g = m >>= (\x -> f x >>= g)
+Let's check whether this law holds=>
+
+(i) Let's first check when m = Nothing =>
+=> Nothing >>= f >>= g
+= Nothing >>= g
+= Nothing
+= Nothing >>= (\x -> f x >>= g)
+Third law is valid when m = Nothing
+
+(ii) Let's now check when m = Just a =>
+=> Just a >>= f >>= g
+= f a >>= g
+= (\x -> f x >>= g) a
+= Just a >>= (\x -> f x >>= g)
+Third law is valid when m = Just a
+
+Hence, third law is valid.
+
+Hence, Maybe monad satisfies the monadic laws
+
+----------------------------------------------------------------------------------------------------------------------
+
+Q2:
+return x = [x]
+>>= xs g = concat $ map g xs
+
+Proof:
+1. First monadic law: return a >>= f = f a
+Let's check whether this law holds=>
+
+=> return a >>= f
+= [a] >>= f
+= concat $ map f [a]
+= concat $ [f a]
+= f a
+Hence, first law is valid.
+
+2. Second monadic law: m >>= return = m
+Let's check whether this law holds=>
+
+=> xs >>= return
+= concat $ map return xs
+= concat $ [return x | x <- xs]
+= concat [[x] | x <- xs]
+= xs
+Hence, second law is valid.
+
+3. Third monadic law: m >>= f >>= g = m >>= (\x -> f x >>= g)
+Let's check whether this law holds=>
+
+=> xs >>= f >>= g
+= (concat $ map f xs) >>= g
+= (concat $ [f y | y <- xs]) >>= g
+= concat $ map g (concat $ [f y | y <- xs])
+= concat $ map g (concat [f y | y <- xs])
+= concat $ [concat $ map g (f y) | y <- xs]
+= concat $ [f y >>= g | y <- xs]
+= concat $ [(\x -> f x >>= g) y | y <- xs]
+= concat $ map (\x -> f x >>= g) xs
+= xs >>= (\x -> f x >>= g)
+Hence, third law is valid.
+
+Hence, List monad satisfies the monadic laws
+
+----------------------------------------------------------------------------------------------------------------------
+
+Q3:
+update :: Integer -> Integer -> State [(Integer, Integer)] Integer
+update n val = state (\xs -> (val, (n, val):xs))
+
+calc_fib n = do
+    if n <= 2 then
+        do
+            update n 1
+            return 1
+    else do
+            dp <- get
+            let a = filter (\(x,y) -> x==n) dp
+            if not (null a) then return $ snd $ head a
+            else do
+                    prev      <- calc_fib $ n-1
+                    prev_prev <- calc_fib $ n-2   
+                    let sum = prev + prev_prev
+                    update n sum
+                    return sum
+
+fibmem n = evalState (calc_fib n) []
+
+----------------------------------------------------------------------------------------------------------------------
+
+Q4:
+(a)
+sum_with_do = sum_with_do_aux 0
+  where sum_with_do_aux n = do
+            val <- getLine
+            proceed val
+            where proceed val
+                    | int_val == -1   = putStrLn $ show n
+                    | int_val < 0     = sum_with_do_aux n
+                    | otherwise       = sum_with_do_aux $ n+int_val
+                    where int_val = read val::Integer
+
+(b)
+sum_without_do = sum_without_do_aux 0
+  where sum_without_do_aux n = getLine >>= proceed
+          where proceed val
+                    | int_val == -1   = putStrLn $ show n
+                    | int_val < 0     = sum_without_do_aux n
+                    | otherwise       = sum_without_do_aux $ n+int_val
+                    where int_val = read val::Integer
