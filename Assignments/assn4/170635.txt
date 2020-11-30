@@ -87,6 +87,11 @@ Let's check whether this law holds=>
 = (concat $ [f y | y <- xs]) >>= g
 = concat $ map g (concat $ [f y | y <- xs])
 = concat $ map g (concat [f y | y <- xs])
+= concat $ map g [a | y <- xs, a <- f y]
+= concat $ [g a | y <- xs, a <- f y]
+= [b | y <- xs, a <- f y, b <- g a]
+= concat $ [[b | a <- f y, b <- g a] | y <- xs]
+= concat $ [concat [g a | a <- f y] | y <- xs]
 = concat $ [concat $ map g (f y) | y <- xs]
 = concat $ [f y >>= g | y <- xs]
 = concat $ [(\x -> f x >>= g) y | y <- xs]
@@ -99,24 +104,21 @@ Hence, List monad satisfies the monadic laws
 ----------------------------------------------------------------------------------------------------------------------
 
 Q3:
+import Control.Monad.State
+
 update :: Integer -> Integer -> State [(Integer, Integer)] Integer
 update n val = state (\xs -> (val, (n, val):xs))
 
 calc_fib n = do
-    if n <= 2 then
-        do
-            update n 1
-            return 1
+    if n <= 2 then update n 1
     else do
-            dp <- get
-            let a = filter (\(x,y) -> x==n) dp
-            if not (null a) then return $ snd $ head a
-            else do
-                    prev      <- calc_fib $ n-1
-                    prev_prev <- calc_fib $ n-2   
-                    let sum = prev + prev_prev
-                    update n sum
-                    return sum
+        dp <- get
+        let a = filter (\(x,y) -> x==n) dp
+        if not (null a) then return $ snd $ head a
+        else do
+            prev      <- calc_fib $ n-1
+            prev_prev <- calc_fib $ n-2   
+            update n (prev + prev_prev)
 
 fibmem n = evalState (calc_fib n) []
 
